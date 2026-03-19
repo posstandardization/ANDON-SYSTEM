@@ -23,7 +23,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--primary); color: white; min-height: 100vh; overflow-x: hidden; }
 
-        /* Dashboard Layout (Replacing Full Screen Mode) */
+        /* Dashboard Layout */
         #homePage {
             display: flex;
             flex-direction: column;
@@ -65,7 +65,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 220px; /* Fixed height for a balanced look */
+            height: 220px;
             border: none;
             border-radius: 16px;
             font-size: 2.2rem;
@@ -91,17 +91,6 @@
         .btn-qc { background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); }
         .btn-control { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
         .btn-pareto { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-
-        /* Responsive adjustments for smaller screens */
-        @media (max-width: 768px) {
-            .button-grid {
-                grid-template-columns: 1fr;
-                width: 100%;
-                max-width: 400px;
-            }
-            .home-header h1 { font-size: 2rem; }
-            .big-btn { height: 180px; }
-        }
 
         /* Overlay screens */
         .overlay {
@@ -221,12 +210,45 @@
             animation: blinker 0.8s linear infinite;
         }
 
-        /* Control Room Tables */
-        .cr-section { margin-bottom: 40px; }
-        .cr-section h2 { margin-bottom: 10px; color: var(--control-color); border-left: 5px solid; padding-left: 10px; }
-        table { width: 100%; border-collapse: collapse; background: var(--secondary); border-radius: 8px; overflow: hidden; }
-        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--accent); }
-        th { background: var(--accent); font-size: 0.9rem; }
+        /* Control Room Tables & Stats */
+        .cr-stats-bar {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            flex: 1;
+            background: var(--secondary);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border-left: 5px solid;
+        }
+        .stat-open { border-color: var(--danger); }
+        .stat-closed { border-color: var(--pareto-color); }
+        .stat-card h3 { font-size: 0.9rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 5px; }
+        .stat-card p { font-size: 2.5rem; font-weight: 800; }
+
+        .cr-container {
+            display: flex;
+            gap: 20px;
+            height: calc(100vh - 300px);
+        }
+        .cr-split {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--secondary);
+            border-radius: 12px;
+            padding: 15px;
+            overflow: hidden;
+        }
+        .cr-split h2 { margin-bottom: 10px; font-size: 1.2rem; border-bottom: 2px solid var(--accent); padding-bottom: 8px; }
+        .cr-split-table-wrapper { overflow-y: auto; flex: 1; }
+        
+        table { width: 100%; border-collapse: collapse; background: var(--secondary); border-radius: 8px; }
+        th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid var(--accent); font-size: 0.85rem; }
+        th { background: var(--accent); position: sticky; top: 0; z-index: 10; }
         .blink-text { color: var(--danger); font-weight: bold; animation: blinker 1s infinite; }
 
         /* Pareto Page Layout */
@@ -247,11 +269,38 @@
         .pareto-legend { display: flex; gap: 20px; margin-top: 10px; font-size: 0.8rem; justify-content: center; }
         .legend-item { display: flex; align-items: center; gap: 6px; }
         .legend-color { width: 12px; height: 12px; border-radius: 2px; }
+
+        /* Custom Confirmation Modal */
+        #confirmModal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+        .confirm-box {
+            background: var(--secondary);
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            max-width: 400px;
+            border: 1px solid var(--danger);
+        }
+        .confirm-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+            justify-content: center;
+        }
+        .btn-confirm { background: var(--danger); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-cancel { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<!-- UPDATED HOME PAGE -->
+<!-- DASHBOARD HOME PAGE -->
 <div id="homePage">
     <div class="home-header">
         <h1>PORT ANDON SYSTEM</h1>
@@ -259,22 +308,10 @@
     </div>
     
     <div class="button-grid">
-        <button class="big-btn btn-rtg" onclick="openLogin('RTG')">
-            RTG
-            <span>Rubber Tired Gantry</span>
-        </button>
-        <button class="big-btn btn-qc" onclick="openLogin('QC')">
-            QC
-            <span>Quay Crane</span>
-        </button>
-        <button class="big-btn btn-control" onclick="showOverlay('controlRoom')">
-            Control Room
-            <span>Dual Monitoring</span>
-        </button>
-        <button class="big-btn btn-pareto" onclick="showOverlay('paretoView')">
-            Pareto
-            <span>Analytics & Logs</span>
-        </button>
+        <button class="big-btn btn-rtg" onclick="openLogin('RTG')">RTG<span>Rubber Tired Gantry</span></button>
+        <button class="big-btn btn-qc" onclick="openLogin('QC')">QC<span>Quay Crane</span></button>
+        <button class="big-btn btn-control" onclick="showOverlay('controlRoom')">Control Room<span>Dual Monitoring</span></button>
+        <button class="big-btn btn-pareto" onclick="showOverlay('paretoView')">Pareto<span>Analytics & Logs</span></button>
     </div>
 </div>
 
@@ -319,23 +356,41 @@
     <div class="header-bar">
         <button class="home-btn" onclick="hideOverlay('controlRoom')">🏠 HOME</button>
         <h1>CONTROL ROOM LIVE VIEW</h1>
-        <div style="width:100px"></div>
+        <button onclick="requestReset()" style="background: var(--danger); border: none; padding: 10px 20px; color: white; border-radius: 6px; cursor: pointer; font-weight: bold;">🗑️ RESET DATA</button>
     </div>
 
-    <div class="cr-section">
-        <h2>RTG LIVE ANDONS</h2>
-        <table>
-            <thead><tr><th>RTG</th><th>Staff</th><th>Fault Group</th><th>Raised Fault</th><th>Timer</th></tr></thead>
-            <tbody id="rtgControlBody"></tbody>
-        </table>
+    <!-- Stats Bar -->
+    <div class="cr-stats-bar">
+        <div class="stat-card stat-open">
+            <h3>Andons Currently Open</h3>
+            <p id="countOpen">0</p>
+        </div>
+        <div class="stat-card stat-closed">
+            <h3>Andons Closed (Session)</h3>
+            <p id="countClosed">0</p>
+        </div>
     </div>
 
-    <div class="cr-section">
-        <h2>QC LIVE ANDONS</h2>
-        <table>
-            <thead><tr><th>QC</th><th>Staff</th><th>Fault Group</th><th>Raised Fault</th><th>Timer</th></tr></thead>
-            <tbody id="qcControlBody"></tbody>
-        </table>
+    <!-- Side-by-Side Live View -->
+    <div class="cr-container">
+        <div class="cr-split">
+            <h2 style="color: var(--rtg-color);">RTG LIVE ANDONS</h2>
+            <div class="cr-split-table-wrapper">
+                <table>
+                    <thead><tr><th>RTG No</th><th>Staff</th><th>Fault</th><th>Timer</th></tr></thead>
+                    <tbody id="rtgControlBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="cr-split">
+            <h2 style="color: var(--qc-color);">QC LIVE ANDONS</h2>
+            <div class="cr-split-table-wrapper">
+                <table>
+                    <thead><tr><th>QC No</th><th>Staff</th><th>Fault</th><th>Timer</th></tr></thead>
+                    <tbody id="qcControlBody"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -344,7 +399,10 @@
     <div class="header-bar">
         <button class="home-btn" onclick="hideOverlay('paretoView')">🏠 HOME</button>
         <h1>PARETO ANALYSIS CENTER</h1>
-        <button onclick="downloadLog()" style="background: var(--pareto-color); border: none; padding: 10px 20px; color: white; border-radius: 4px; cursor: pointer; font-weight: bold;">📥 EXCEL LOG</button>
+        <div style="display: flex; gap: 10px;">
+            <button onclick="requestReset()" style="background: var(--danger); border: none; padding: 10px 20px; color: white; border-radius: 4px; cursor: pointer; font-weight: bold;">🗑️ RESET DATA</button>
+            <button onclick="downloadLog()" style="background: var(--pareto-color); border: none; padding: 10px 20px; color: white; border-radius: 4px; cursor: pointer; font-weight: bold;">📥 EXCEL LOG</button>
+        </div>
     </div>
 
     <div class="pareto-layout">
@@ -385,70 +443,59 @@
                 <canvas id="pChart"></canvas>
             </div>
             <div class="pareto-legend">
-                <div class="legend-item">
-                    <div class="legend-color" id="opsLegendColor"></div>
-                    <span>OPS Fault</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: var(--active-orange);"></div>
-                    <span>TECH Fault</span>
-                </div>
+                <div class="legend-item"><div class="legend-color" id="opsLegendColor"></div><span>OPS Fault</span></div>
+                <div class="legend-item"><div class="legend-color" style="background: var(--active-orange);"></div><span>TECH Fault</span></div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- RESET CONFIRMATION MODAL -->
+<div id="confirmModal">
+    <div class="confirm-box">
+        <h2 style="color: var(--danger);">⚠️ Reset Data?</h2>
+        <p style="margin-top: 10px; color: #94a3b8;">This will permanently delete all logged history. Active Andons will not be affected.</p>
+        <div class="confirm-actions">
+            <button class="btn-cancel" onclick="closeResetModal()">Cancel</button>
+            <button class="btn-confirm" onclick="executeReset()">Reset Now</button>
+        </div>
+    </div>
+</div>
+
 <script>
-    // --- Data Definitions ---
+    // --- Configuration & Data ---
     const config = {
         RTG: {
-            range: [33, 128],
-            prefix: 'RTG',
+            range: [33, 128], prefix: 'RTG',
             ops: ["NO TT", "NO JOB TO DO", "GANTRY", "WHEELTURN", "ACCIDENT", "CONTAINER ALIGNMENT", "OTHERS"],
             tech: ["HOIST FAULT", "SPREADER FAULT", "TROLLEY FAULT", "GANTRY FAULT", "CONTROL/POWER", "TRIM/SKEW", "OTHER"]
         },
         QC: {
-            range: [8, 36],
-            prefix: 'QC',
+            range: [8, 36], prefix: 'QC',
             ops: ["WAITING FOR TT", "WAITING FOR SAFETY CAGE", "WAITING FOR OHF", "ACCIDENT", "CONNECTING WIRE SLING", "JAMMED TWISTLOCK", "WAITING FOR GEAR BOX", "DAMAGED CONTAINER", "LASHING", "UNLASHING"],
             tech: ["HOIST FAULT", "SPREADER FAULT", "GANTRY FAULT", "CONTROL/POWER", "SKEW/TRIM", "TROLLEY", "SPEED", "OTHER FAULTS"]
         }
     };
 
-    let appMode = 'RTG'; // Current mode during login/console
-    let currentAsset = null;
-    let currentStaff = null;
-    let pMode = 'RTG'; // Pareto view mode
-
-    // State Persistence
+    let appMode = 'RTG', currentAsset = null, currentStaff = null, pMode = 'RTG';
     let activeAndons = JSON.parse(localStorage.getItem('port_active')) || [];
     let logs = JSON.parse(localStorage.getItem('port_logs')) || [];
 
-    // --- Initialization ---
-    window.onload = () => {
-        updateControlRoomTables();
-        setInterval(updateTimers, 1000);
-    };
+    window.onload = () => { updateControlRoomTables(); setInterval(updateTimers, 1000); };
 
     function showOverlay(id) { 
         document.getElementById(id).style.display = 'block'; 
         if(id === 'controlRoom') updateControlRoomTables();
-        if(id === 'paretoView') { setParetoMode('RTG'); }
+        if(id === 'paretoView') setParetoMode('RTG');
     }
     function hideOverlay(id) { document.getElementById(id).style.display = 'none'; }
 
-    // --- Login Logic ---
+    // --- Asset Login ---
     function openLogin(mode) {
         appMode = mode;
-        const title = document.getElementById('loginTitle');
-        const subtitle = document.getElementById('loginSubtitle');
         const select = document.getElementById('assetSelect');
-        const btn = document.getElementById('loginActionBtn');
-
-        title.innerText = `${mode} OPERATOR LOGIN`;
-        subtitle.innerText = `${mode} ACCESS PANEL`;
-        btn.style.backgroundColor = mode === 'RTG' ? 'var(--rtg-color)' : 'var(--qc-color)';
-        
+        document.getElementById('loginTitle').innerText = `${mode} OPERATOR LOGIN`;
+        document.getElementById('loginActionBtn').style.backgroundColor = mode === 'RTG' ? 'var(--rtg-color)' : 'var(--qc-color)';
         select.innerHTML = '';
         const [start, end] = config[mode].range;
         for(let i = start; i <= end; i++) {
@@ -456,15 +503,13 @@
             const text = `${config[mode].prefix} ${val}`;
             select.add(new Option(text, text));
         }
-
         showOverlay('loginOverlay');
     }
 
     function enterConsole() {
         currentStaff = document.getElementById('staffId').value;
         currentAsset = document.getElementById('assetSelect').value;
-        if(!currentStaff) return alert("Please enter Staff ID");
-
+        if(!currentStaff) return;
         document.getElementById('consoleTitle').innerText = `${currentAsset} | Staff: ${currentStaff}`;
         initAndonGrids();
         hideOverlay('loginOverlay');
@@ -472,131 +517,101 @@
         refreshConsoleUI();
     }
 
-    function exitConsole() {
-        currentAsset = null;
-        currentStaff = null;
-        hideOverlay('andonConsole');
-    }
+    function exitConsole() { currentAsset = null; currentStaff = null; hideOverlay('andonConsole'); }
 
     // --- Andon Console Logic ---
     function initAndonGrids() {
-        const opsGrid = document.getElementById('opsGrid');
-        const techGrid = document.getElementById('techGrid');
-        opsGrid.innerHTML = '';
-        techGrid.innerHTML = '';
-
-        const data = config[appMode];
-        data.ops.forEach(fault => createBtn(fault, 'OPS', opsGrid));
-        data.tech.forEach(fault => createBtn(fault, 'TECH', techGrid));
+        const opsGrid = document.getElementById('opsGrid'), techGrid = document.getElementById('techGrid');
+        opsGrid.innerHTML = ''; techGrid.innerHTML = '';
+        config[appMode].ops.forEach(f => createBtn(f, 'OPS', opsGrid));
+        config[appMode].tech.forEach(f => createBtn(f, 'TECH', techGrid));
     }
 
-    function createBtn(fault, group, container) {
+    function createBtn(f, g, c) {
         const b = document.createElement('button');
-        b.className = 'andon-btn';
-        b.innerText = fault;
-        b.onclick = () => raiseAndon(fault, group);
-        container.appendChild(b);
+        b.className = 'andon-btn'; b.innerText = f;
+        b.onclick = () => raiseAndon(f, g);
+        c.appendChild(b);
     }
 
     function raiseAndon(fault, group) {
         if(activeAndons.some(a => a.asset === currentAsset)) return;
-
-        const entry = {
-            id: Date.now(),
-            mode: appMode,
-            asset: currentAsset,
-            staff: currentStaff,
-            group: group,
-            fault: fault,
-            start: new Date().getTime()
-        };
-
-        activeAndons.push(entry);
-        saveState();
-        refreshConsoleUI();
+        activeAndons.push({ id: Date.now(), mode: appMode, asset: currentAsset, staff: currentStaff, group: group, fault: fault, start: new Date().getTime() });
+        saveState(); refreshConsoleUI();
     }
 
     function refreshConsoleUI() {
         const active = activeAndons.find(a => a.asset === currentAsset);
         const closeBtn = document.getElementById('closeAndonBtn');
-        
-        document.querySelectorAll('.andon-btn').forEach(b => b.classList.remove('active'));
-
-        if(active) {
-            document.querySelectorAll('.andon-btn').forEach(b => {
-                if(b.innerText === active.fault) b.classList.add('active');
-            });
-            closeBtn.classList.add('blinking');
-        } else {
-            closeBtn.classList.remove('blinking');
-        }
+        document.querySelectorAll('.andon-btn').forEach(b => b.classList.toggle('active', active && b.innerText === active.fault));
+        closeBtn.classList.toggle('blinking', !!active);
     }
 
     function triggerCloseAndon() {
         const idx = activeAndons.findIndex(a => a.asset === currentAsset);
         if(idx === -1) return;
-
         const closed = activeAndons.splice(idx, 1)[0];
         const end = new Date().getTime();
-
-        logs.push({
-            ...closed,
-            end: end,
-            duration: Math.floor((end - closed.start) / 1000)
-        });
-
-        saveState();
-        refreshConsoleUI();
+        logs.push({ ...closed, end: end, duration: Math.floor((end - closed.start) / 1000) });
+        saveState(); refreshConsoleUI();
     }
 
     function saveState() {
         localStorage.setItem('port_active', JSON.stringify(activeAndons));
         localStorage.setItem('port_logs', JSON.stringify(logs));
+        if (document.getElementById('controlRoom').style.display === 'block') updateControlRoomTables();
     }
 
-    // --- Control Room Logic ---
+    // --- Control Room Tables ---
     function updateControlRoomTables() {
-        const rtgBody = document.getElementById('rtgControlBody');
-        const qcBody = document.getElementById('qcControlBody');
-        rtgBody.innerHTML = '';
-        qcBody.innerHTML = '';
-
+        const rtgBody = document.getElementById('rtgControlBody'), qcBody = document.getElementById('qcControlBody');
+        const countOpenEl = document.getElementById('countOpen'), countClosedEl = document.getElementById('countClosed');
+        
+        rtgBody.innerHTML = ''; qcBody.innerHTML = '';
+        
         activeAndons.forEach(a => {
             const row = `<tr>
                 <td>${a.asset}</td>
                 <td>${a.staff}</td>
-                <td>${a.group}</td>
                 <td class="blink-text">${a.fault}</td>
                 <td id="timer-${a.id}">--</td>
             </tr>`;
-            if(a.mode === 'RTG') rtgBody.innerHTML += row;
-            else qcBody.innerHTML += row;
+            if(a.mode === 'RTG') rtgBody.innerHTML += row; else qcBody.innerHTML += row;
         });
+
+        // Update Statistics
+        countOpenEl.innerText = activeAndons.length;
+        countClosedEl.innerText = logs.length;
     }
 
     function updateTimers() {
         activeAndons.forEach(a => {
             const el = document.getElementById(`timer-${a.id}`);
             if(el) {
-                const diff = Math.floor((new Date().getTime() - a.start) / 1000);
-                const m = Math.floor(diff / 60);
-                const s = diff % 60;
-                el.innerText = `${m}m ${s}s`;
+                const d = Math.floor((new Date().getTime() - a.start) / 1000);
+                el.innerText = `${Math.floor(d/60)}m ${d%60}s`;
             }
         });
     }
 
-    // --- Pareto Logic ---
+    // --- Reset Management ---
+    function requestReset() { document.getElementById('confirmModal').style.display = 'flex'; }
+    function closeResetModal() { document.getElementById('confirmModal').style.display = 'none'; }
+    function executeReset() {
+        logs = [];
+        localStorage.setItem('port_logs', JSON.stringify(logs));
+        renderPareto();
+        updateControlRoomTables();
+        closeResetModal();
+    }
+
+    // --- Pareto Chart Logic ---
     let myChart;
     function setParetoMode(mode) {
         pMode = mode;
         document.getElementById('sideBtnRTG').classList.toggle('active', mode === 'RTG');
         document.getElementById('sideBtnQC').classList.toggle('active', mode === 'QC');
-        
-        // Update Legend Color
         document.getElementById('opsLegendColor').style.background = mode === 'RTG' ? 'var(--rtg-color)' : 'var(--qc-color)';
-        
-        // Update asset dropdown
         const filter = document.getElementById('pAssetFilter');
         filter.innerHTML = '<option value="All">All Units</option>';
         const [start, end] = config[mode].range;
@@ -609,120 +624,59 @@
     }
 
     function renderPareto() {
-        const timeFilter = document.getElementById('pTimeFilter').value;
-        const assetFilter = document.getElementById('pAssetFilter').value;
-        const dateFilter = document.getElementById('pDateFilter').value;
-        const fromTime = document.getElementById('pFromTime').value;
-        const toTime = document.getElementById('pToTime').value;
-
-        const now = new Date().getTime();
-        const hrs24 = 24 * 60 * 60 * 1000;
-
+        const tF = document.getElementById('pTimeFilter').value, aF = document.getElementById('pAssetFilter').value, dF = document.getElementById('pDateFilter').value;
+        const fT = document.getElementById('pFromTime').value, tT = document.getElementById('pToTime').value;
+        const now = Date.now();
         let filtered = logs.filter(l => l.mode === pMode);
 
-        // Pre-filter by Mode (Session/24h)
-        if(timeFilter === '24h') {
-            filtered = filtered.filter(l => (now - l.start) <= hrs24);
-        } else if (timeFilter === 'live') {
-            filtered = filtered.filter(l => (now - l.start) <= (4 * 60 * 60 * 1000));
-        }
+        if(tF === '24h') filtered = filtered.filter(l => (now - l.start) <= 86400000);
+        else if(tF === 'live') filtered = filtered.filter(l => (now - l.start) <= 14400000);
+        
+        if(aF !== 'All') filtered = filtered.filter(l => l.asset === aF);
+        if(dF) filtered = filtered.filter(l => new Date(l.start).toISOString().split('T')[0] === dF);
+        
+        if(fT || tT) filtered = filtered.filter(l => {
+            const time = new Date(l.start).toTimeString().substring(0,5);
+            return (!fT || time >= fT) && (!tT || time <= tT);
+        });
 
-        // Filter by Asset
-        if(assetFilter !== 'All') {
-            filtered = filtered.filter(l => l.asset === assetFilter);
-        }
-
-        // Filter by specific Date
-        if(dateFilter) {
-            filtered = filtered.filter(l => new Date(l.start).toISOString().split('T')[0] === dateFilter);
-        }
-
-        // Filter by Time Range
-        if (fromTime || toTime) {
-            filtered = filtered.filter(l => {
-                const entryDate = new Date(l.start);
-                const timeString = entryDate.toTimeString().split(' ')[0].substring(0, 5); // "HH:MM"
-                let isAfterFrom = true;
-                let isBeforeTo = true;
-                if (fromTime) isAfterFrom = timeString >= fromTime;
-                if (toTime) isBeforeTo = timeString <= toTime;
-                return isAfterFrom && isBeforeTo;
-            });
-        }
-
-        const counts = {};
-        filtered.forEach(f => counts[f.fault] = (counts[f.fault] || 0) + 1);
-
+        const counts = {}; filtered.forEach(f => counts[f.fault] = (counts[f.fault] || 0) + 1);
         const labels = Object.keys(counts).sort((a,b) => counts[b] - counts[a]);
         const data = labels.map(l => counts[l]);
-
-        // Dynamically assign colors based on Group (OPS vs TECH)
-        const colors = labels.map(label => {
-            const sampleEntry = filtered.find(f => f.fault === label);
-            if (sampleEntry && sampleEntry.group === 'TECH') {
-                return '#f97316'; // TECH Fault color (Active Orange)
-            }
-            return pMode === 'RTG' ? '#3b82f6' : '#8b5cf6'; // OPS Fault color (Theme Blue/Purple)
+        const colors = labels.map(l => {
+            const entry = filtered.find(f => f.fault === l);
+            return entry.group === 'TECH' ? '#f97316' : (pMode === 'RTG' ? '#3b82f6' : '#8b5cf6');
         });
 
         if(myChart) myChart.destroy();
-        const ctx = document.getElementById('pChart').getContext('2d');
-        myChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: `Frequency of ${pMode} Faults`,
-                    data: data,
-                    backgroundColor: colors, // Applied calculated colors array
-                    borderWidth: 0,
-                    borderRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
+        myChart = new Chart(document.getElementById('pChart'), {
+            type: 'bar', data: { labels, datasets: [{ data, backgroundColor: colors, borderRadius: 4 }] },
+            options: { 
+                responsive: true, maintainAspectRatio: false, 
                 scales: { 
-                    y: { 
-                        beginAtZero: true, 
-                        grid: { color: '#334155' }, 
-                        ticks: { color: 'white', stepSize: 1 } 
-                    },
-                    x: { ticks: { color: 'white' } }
+                    y: { grid: { color: '#334155' }, ticks: { color: 'white', stepSize: 1 } }, 
+                    x: { ticks: { color: 'white' } } 
                 },
-                plugins: { 
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            afterLabel: function(context) {
-                                const label = context.label;
-                                const entry = filtered.find(f => f.fault === label);
-                                return `Type: ${entry ? entry.group : 'Unknown'}`;
-                            }
-                        }
-                    }
-                }
+                plugins: { legend: { display: false } }
             }
         });
     }
 
+    // --- Excel Export ---
     function downloadLog() {
-        if(logs.length === 0) return alert("No history available to download.");
-        const exportData = logs.map(l => ({
-            "CATEGORY": l.mode,
-            "ASSET NO": l.asset,
-            "STAFF ID": l.staff,
-            "FAULT GROUP": l.group,
-            "FAULT DESCRIPTION": l.fault,
-            "RAISED TIME": new Date(l.start).toLocaleString(),
-            "CLOSED TIME": new Date(l.end).toLocaleString(),
-            "DURATION (SEC)": l.duration
+        if(!logs.length) return alert("No history to export.");
+        const data = logs.map(l => ({ 
+            CATEGORY: l.mode, ASSET: l.asset, STAFF: l.staff, 
+            GROUP: l.group, FAULT: l.fault, 
+            START: new Date(l.start).toLocaleString(), 
+            END: new Date(l.end).toLocaleString(), 
+            DURATION_SEC: l.duration 
         }));
-        const ws = XLSX.utils.json_to_sheet(exportData);
+        const ws = XLSX.utils.json_to_sheet(data);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Andon Log");
         XLSX.writeFile(wb, "Port_Andon_Report.xlsx");
     }
 </script>
 </body>
-</html>V
+</html>
