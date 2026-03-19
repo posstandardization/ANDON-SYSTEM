@@ -21,16 +21,43 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--primary); color: white; height: 100vh; overflow: hidden; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--primary); color: white; min-height: 100vh; overflow-x: hidden; }
 
-        /* Full Screen Home Page */
+        /* Dashboard Layout (Replacing Full Screen Mode) */
         #homePage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 40px 20px;
+            background: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%);
+        }
+
+        .home-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .home-header h1 {
+            font-size: 3rem;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .home-header p {
+            color: #94a3b8;
+            font-size: 1.2rem;
+        }
+
+        .button-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            grid-template-rows: 1fr 1fr;
-            height: 100vh;
-            gap: 15px;
-            padding: 15px;
+            grid-template-columns: repeat(2, 320px);
+            gap: 25px;
+            max-width: 1000px;
         }
 
         .big-btn {
@@ -38,23 +65,43 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            height: 220px; /* Fixed height for a balanced look */
             border: none;
-            border-radius: 12px;
-            font-size: 2.5rem;
+            border-radius: 16px;
+            font-size: 2.2rem;
             font-weight: 800;
             color: white;
             cursor: pointer;
-            transition: transform 0.1s, opacity 0.2s;
+            transition: all 0.2s ease;
             text-transform: uppercase;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .big-btn:active { transform: scale(0.98); }
-        .big-btn span { font-size: 1.2rem; margin-top: 10px; opacity: 0.8; }
+        .big-btn:hover {
+            transform: translateY(-5px);
+            filter: brightness(1.1);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+        }
 
-        .btn-rtg { background: var(--rtg-color); }
-        .btn-qc { background: var(--qc-color); }
-        .btn-control { background: var(--control-color); }
-        .btn-pareto { background: var(--pareto-color); }
+        .big-btn:active { transform: scale(0.95); }
+        .big-btn span { font-size: 1rem; margin-top: 12px; opacity: 0.9; font-weight: normal; }
+
+        .btn-rtg { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
+        .btn-qc { background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); }
+        .btn-control { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        .btn-pareto { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 768px) {
+            .button-grid {
+                grid-template-columns: 1fr;
+                width: 100%;
+                max-width: 400px;
+            }
+            .home-header h1 { font-size: 2rem; }
+            .big-btn { height: 180px; }
+        }
 
         /* Overlay screens */
         .overlay {
@@ -198,12 +245,31 @@
 </head>
 <body>
 
-<!-- HOME PAGE -->
+<!-- UPDATED HOME PAGE -->
 <div id="homePage">
-    <button class="big-btn btn-rtg" onclick="openLogin('RTG')">RTG<span>Rubber Tired Gantry</span></button>
-    <button class="big-btn btn-qc" onclick="openLogin('QC')">QC<span>Quay Crane</span></button>
-    <button class="big-btn btn-control" onclick="showOverlay('controlRoom')">Control Room<span>Dual Monitoring</span></button>
-    <button class="big-btn btn-pareto" onclick="showOverlay('paretoView')">Pareto<span>Analytics & Logs</span></button>
+    <div class="home-header">
+        <h1>PORT ANDON SYSTEM</h1>
+        <p>Operational Terminal Monitoring & Fault Reporting</p>
+    </div>
+    
+    <div class="button-grid">
+        <button class="big-btn btn-rtg" onclick="openLogin('RTG')">
+            RTG
+            <span>Rubber Tired Gantry</span>
+        </button>
+        <button class="big-btn btn-qc" onclick="openLogin('QC')">
+            QC
+            <span>Quay Crane</span>
+        </button>
+        <button class="big-btn btn-control" onclick="showOverlay('controlRoom')">
+            Control Room
+            <span>Dual Monitoring</span>
+        </button>
+        <button class="big-btn btn-pareto" onclick="showOverlay('paretoView')">
+            Pareto
+            <span>Analytics & Logs</span>
+        </button>
+    </div>
 </div>
 
 <!-- ASSET LOGIN OVERLAY -->
