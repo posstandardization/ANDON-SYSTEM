@@ -240,6 +240,7 @@
         
         .pareto-content { background: var(--secondary); border-radius: 12px; padding: 20px; position: relative; }
         .filter-ribbon { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+        .filter-ribbon label { font-size: 0.8rem; color: #94a3b8; }
         .filter-ribbon select, .filter-ribbon input { padding: 8px; border-radius: 4px; background: var(--primary); color: white; border: 1px solid var(--accent); }
     </style>
 </head>
@@ -348,14 +349,32 @@
         </div>
         <div class="pareto-content">
             <div class="filter-ribbon">
-                <select id="pTimeFilter" onchange="renderPareto()">
-                    <option value="live">Live / Session</option>
-                    <option value="24h">Last 24 Hours</option>
-                </select>
-                <select id="pAssetFilter" onchange="renderPareto()">
-                    <option value="All">All Units</option>
-                </select>
-                <input type="date" id="pDateFilter" onchange="renderPareto()">
+                <div style="display:flex; flex-direction:column;">
+                    <label>View Mode</label>
+                    <select id="pTimeFilter" onchange="renderPareto()">
+                        <option value="live">Live / Session</option>
+                        <option value="24h">Last 24 Hours</option>
+                        <option value="range">Specific Range</option>
+                    </select>
+                </div>
+                <div style="display:flex; flex-direction:column;">
+                    <label>Unit</label>
+                    <select id="pAssetFilter" onchange="renderPareto()">
+                        <option value="All">All Units</option>
+                    </select>
+                </div>
+                <div style="display:flex; flex-direction:column;">
+                    <label>Date</label>
+                    <input type="date" id="pDateFilter" onchange="renderPareto()">
+                </div>
+                <div style="display:flex; flex-direction:column;">
+                    <label>From Time</label>
+                    <input type="time" id="pFromTime" onchange="renderPareto()">
+                </div>
+                <div style="display:flex; flex-direction:column;">
+                    <label>To Time</label>
+                    <input type="time" id="pToTime" onchange="renderPareto()">
+                </div>
             </div>
             <div style="height: 400px; width: 100%;">
                 <canvas id="pChart"></canvas>
@@ -575,24 +594,45 @@
         const timeFilter = document.getElementById('pTimeFilter').value;
         const assetFilter = document.getElementById('pAssetFilter').value;
         const dateFilter = document.getElementById('pDateFilter').value;
+        const fromTime = document.getElementById('pFromTime').value;
+        const toTime = document.getElementById('pToTime').value;
 
         const now = new Date().getTime();
         const hrs24 = 24 * 60 * 60 * 1000;
 
         let filtered = logs.filter(l => l.mode === pMode);
 
+        // Pre-filter by Mode (Session/24h)
         if(timeFilter === '24h') {
             filtered = filtered.filter(l => (now - l.start) <= hrs24);
         } else if (timeFilter === 'live') {
             filtered = filtered.filter(l => (now - l.start) <= (4 * 60 * 60 * 1000));
         }
 
+        // Filter by Asset
         if(assetFilter !== 'All') {
             filtered = filtered.filter(l => l.asset === assetFilter);
         }
 
+        // Filter by specific Date
         if(dateFilter) {
             filtered = filtered.filter(l => new Date(l.start).toISOString().split('T')[0] === dateFilter);
+        }
+
+        // Filter by Time Range (applies to the dates already filtered)
+        if (fromTime || toTime) {
+            filtered = filtered.filter(l => {
+                const entryDate = new Date(l.start);
+                const timeString = entryDate.toTimeString().split(' ')[0].substring(0, 5); // "HH:MM"
+                
+                let isAfterFrom = true;
+                let isBeforeTo = true;
+
+                if (fromTime) isAfterFrom = timeString >= fromTime;
+                if (toTime) isBeforeTo = timeString <= toTime;
+
+                return isAfterFrom && isBeforeTo;
+            });
         }
 
         const counts = {};
