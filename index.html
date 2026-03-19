@@ -488,7 +488,7 @@
         if(id === 'controlRoom') updateControlRoomTables();
         if(id === 'paretoView') setParetoMode('RTG');
     }
-    function hideOverlay(id) { document.getElementById(id).style.display = 'none'; }
+    function hideOverlay(id) { document.getElementById(id).style.none; }
 
     // --- Asset Login ---
     function openLogin(mode) {
@@ -640,9 +640,16 @@
             return (!fT || time >= fT) && (!tT || time <= tT);
         });
 
-        const counts = {}; filtered.forEach(f => counts[f.fault] = (counts[f.fault] || 0) + 1);
-        const labels = Object.keys(counts).sort((a,b) => counts[b] - counts[a]);
-        const data = labels.map(l => counts[l]);
+        // Calculate total duration in minutes per fault type
+        const minsMap = {}; 
+        filtered.forEach(f => {
+            const m = (f.duration || 0) / 60;
+            minsMap[f.fault] = (minsMap[f.fault] || 0) + m;
+        });
+        
+        const labels = Object.keys(minsMap).sort((a,b) => minsMap[b] - minsMap[a]);
+        const data = labels.map(l => parseFloat(minsMap[l].toFixed(1)));
+        
         const colors = labels.map(l => {
             const entry = filtered.find(f => f.fault === l);
             return entry.group === 'TECH' ? '#f97316' : (pMode === 'RTG' ? '#3b82f6' : '#8b5cf6');
@@ -654,10 +661,23 @@
             options: { 
                 responsive: true, maintainAspectRatio: false, 
                 scales: { 
-                    y: { grid: { color: '#334155' }, ticks: { color: 'white', stepSize: 1 } }, 
+                    y: { 
+                        title: { display: true, text: 'Total Duration (Minutes)', color: 'white' },
+                        grid: { color: '#334155' }, 
+                        ticks: { color: 'white' } 
+                    }, 
                     x: { ticks: { color: 'white' } } 
                 },
-                plugins: { legend: { display: false } }
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Duration: ${context.parsed.y} mins`;
+                            }
+                        }
+                    }
+                }
             }
         });
     }
