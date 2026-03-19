@@ -3,285 +3,580 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RTG Andon System</title>
+    <title>Port Andon System</title>
+    <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
-            --primary: #2c3e50;
-            --danger: #e74c3c;
-            --success: #27ae60;
-            --warning: #f1c40f;
+            --primary: #0f172a;
+            --secondary: #1e293b;
+            --accent: #334155;
+            --rtg-color: #3b82f6;
+            --qc-color: #8b5cf6;
+            --control-color: #f59e0b;
+            --pareto-color: #10b981;
+            --danger: #ef4444;
+            --active-orange: #f97316;
         }
-        body { font-family: sans-serif; margin: 0; background: #f4f7f6; }
-        nav { background: var(--primary); padding: 1rem; display: flex; gap: 10px; justify-content: center; }
-        button { padding: 12px 20px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; }
-        
-        /* Modals */
-        .modal { display: none; position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); }
-        .modal-content { background: white; margin: 5% auto; padding: 20px; width: 80%; border-radius: 8px; }
-        
-        /* Grid Layouts */
-        .andon-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
-        .section-box { border: 2px solid #ddd; padding: 15px; border-radius: 8px; }
-        .btn-group { display: flex; flex-wrap: wrap; gap: 10px; }
-        .andon-btn { width: 140px; height: 80px; font-size: 0.8rem; background: #ecf0f1; transition: 0.3s; }
-        .andon-btn.active { background: var(--danger); color: white; animation: blink 1s infinite; }
 
-        /* Control Room & Pareto */
-        .view-page { display: none; padding: 20px; }
-        .active-view { display: block; }
-        table { width: 100%; border-collapse: collapse; background: white; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        .blink-red { color: white; background: var(--danger); animation: blink 1s infinite; font-weight: bold; padding: 5px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--primary); color: white; height: 100vh; overflow: hidden; }
 
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-        
-        .close-andon-bar { 
-            width: 100%; margin-top: 20px; height: 60px; font-size: 1.5rem; 
-            background: #95a5a6; color: white; border: none; 
+        /* Full Screen Home Page */
+        #homePage {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            height: 100vh;
+            gap: 15px;
+            padding: 15px;
         }
-        .close-andon-bar.can-close { background: var(--warning); color: black; animation: blink 0.8s infinite; cursor: pointer; }
+
+        .big-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            border-radius: 12px;
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+            text-transform: uppercase;
+        }
+
+        .big-btn:active { transform: scale(0.98); }
+        .big-btn span { font-size: 1.2rem; margin-top: 10px; opacity: 0.8; }
+
+        .btn-rtg { background: var(--rtg-color); }
+        .btn-qc { background: var(--qc-color); }
+        .btn-control { background: var(--control-color); }
+        .btn-pareto { background: var(--pareto-color); }
+
+        /* Overlay screens */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--primary);
+            z-index: 100;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--accent);
+            padding-bottom: 10px;
+        }
+
+        .home-btn { 
+            background: var(--danger); 
+            color: white; 
+            padding: 12px 24px; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        /* Forms */
+        .login-card {
+            max-width: 500px;
+            margin: 60px auto;
+            background: var(--secondary);
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .login-card input, .login-card select {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid var(--accent);
+            background: var(--primary);
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        /* Andon Terminal */
+        .andon-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            height: calc(100vh - 220px);
+        }
+
+        .andon-section {
+            background: var(--secondary);
+            padding: 20px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .andon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 10px;
+            overflow-y: auto;
+        }
+
+        .andon-btn {
+            aspect-ratio: 1.6/1;
+            border: 2px solid var(--accent);
+            background: var(--secondary);
+            color: white;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 8px;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            transition: background 0.2s;
+        }
+
+        .andon-btn.active {
+            background: var(--active-orange) !important;
+            border-color: white;
+        }
+
+        @keyframes blinker { 50% { opacity: 0.2; } }
+
+        .close-bar {
+            grid-column: span 2;
+            height: 80px;
+            margin-top: 15px;
+            background: var(--accent);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: not-allowed;
+            text-transform: uppercase;
+        }
+
+        .close-bar.blinking {
+            background: #eab308;
+            color: black;
+            cursor: pointer;
+            animation: blinker 0.8s linear infinite;
+        }
+
+        /* Control Room Tables */
+        .cr-section { margin-bottom: 40px; }
+        .cr-section h2 { margin-bottom: 10px; color: var(--control-color); border-left: 5px solid; padding-left: 10px; }
+        table { width: 100%; border-collapse: collapse; background: var(--secondary); border-radius: 8px; overflow: hidden; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--accent); }
+        th { background: var(--accent); font-size: 0.9rem; }
+        .blink-text { color: var(--danger); font-weight: bold; animation: blinker 1s infinite; }
+
+        /* Pareto Page Layout */
+        .pareto-layout { display: grid; grid-template-columns: 200px 1fr; gap: 20px; height: calc(100vh - 150px); }
+        .pareto-sidebar { display: flex; flex-direction: column; gap: 10px; }
+        .sidebar-btn { 
+            padding: 15px; border: none; background: var(--secondary); color: white; border-radius: 8px; 
+            cursor: pointer; font-weight: bold; text-align: left; transition: 0.2s;
+        }
+        .sidebar-btn.active { background: var(--pareto-color); }
+        
+        .pareto-content { background: var(--secondary); border-radius: 12px; padding: 20px; position: relative; }
+        .filter-ribbon { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+        .filter-ribbon select, .filter-ribbon input { padding: 8px; border-radius: 4px; background: var(--primary); color: white; border: 1px solid var(--accent); }
     </style>
 </head>
 <body>
 
-<nav>
-    <button onclick="openRTGSelection()" style="background: #3498db; color: white;">RTG</button>
-    <button onclick="showPage('qcView')" style="background: #9b59b6; color: white;">QC</button>
-    <button onclick="showPage('controlRoom')" style="background: #e67e22; color: white;">CONTROL ROOM VIEW</button>
-    <button onclick="showPage('paretoPage')" style="background: #27ae60; color: white;">PARETO ANALYSIS</button>
-</nav>
+<!-- HOME PAGE -->
+<div id="homePage">
+    <button class="big-btn btn-rtg" onclick="openLogin('RTG')">RTG<span>Rubber Tired Gantry</span></button>
+    <button class="big-btn btn-qc" onclick="openLogin('QC')">QC<span>Quay Crane</span></button>
+    <button class="big-btn btn-control" onclick="showOverlay('controlRoom')">Control Room<span>Dual Monitoring</span></button>
+    <button class="big-btn btn-pareto" onclick="showOverlay('paretoView')">Pareto<span>Analytics & Logs</span></button>
+</div>
 
-<div id="rtgModal" class="modal">
-    <div class="modal-content" style="max-width: 400px; text-align: center;">
-        <h2>RTG Access</h2>
-        <input type="text" id="staffId" placeholder="Enter Staff ID" style="width: 100%; padding: 10px; margin-bottom: 15px;"><br>
-        <select id="rtgSelect" style="width: 100%; padding: 10px; margin-bottom: 15px;"></select><br>
-        <button onclick="enterAndonScreen()" style="background: var(--success); color: white; width: 100%;">OPEN ANDON SCREEN</button>
-        <button onclick="closeModal('rtgModal')" style="margin-top: 10px; background: #eee;">Cancel</button>
+<!-- ASSET LOGIN OVERLAY -->
+<div id="loginOverlay" class="overlay">
+    <div class="header-bar">
+        <button class="home-btn" onclick="hideOverlay('loginOverlay')">🏠 HOME</button>
+        <h1 id="loginTitle">ASSET LOGIN</h1>
+        <div style="width:100px"></div>
+    </div>
+    <div class="login-card">
+        <h2 id="loginSubtitle">OPERATOR ACCESS</h2>
+        <input type="text" id="staffId" placeholder="Enter Staff ID">
+        <select id="assetSelect"></select>
+        <button id="loginActionBtn" class="big-btn" style="width: 100%; font-size: 1.5rem; height: 60px; margin-top: 20px;" onclick="enterConsole()">ENTER CONSOLE</button>
     </div>
 </div>
 
-<div id="andonScreen" class="modal">
-    <div class="modal-content">
-        <h2 id="currentRtgTitle">RTG: --</h2>
-        <div class="andon-grid">
-            <div class="section-box">
-                <h3>OPS ANDONS</h3>
-                <div class="btn-group" id="opsBtns">
-                    </div>
+<!-- ANDON CONSOLE OVERLAY -->
+<div id="andonConsole" class="overlay">
+    <div class="header-bar">
+        <button class="home-btn" onclick="exitConsole()">🏠 HOME / LOGOUT</button>
+        <h1 id="consoleTitle">CONSOLE</h1>
+        <div style="width:100px"></div>
+    </div>
+    
+    <div class="andon-container">
+        <div class="andon-section">
+            <h2>OPS ANDONS</h2>
+            <div class="andon-grid" id="opsGrid"></div>
+        </div>
+        <div class="andon-section">
+            <h2>TECH ANDONS</h2>
+            <div class="andon-grid" id="techGrid"></div>
+        </div>
+        <button id="closeAndonBtn" class="close-bar" onclick="triggerCloseAndon()">CLOSE ANDON</button>
+    </div>
+</div>
+
+<!-- CONTROL ROOM OVERLAY -->
+<div id="controlRoom" class="overlay">
+    <div class="header-bar">
+        <button class="home-btn" onclick="hideOverlay('controlRoom')">🏠 HOME</button>
+        <h1>CONTROL ROOM LIVE VIEW</h1>
+        <div style="width:100px"></div>
+    </div>
+
+    <div class="cr-section">
+        <h2>RTG LIVE ANDONS</h2>
+        <table>
+            <thead><tr><th>RTG</th><th>Staff</th><th>Fault Group</th><th>Raised Fault</th><th>Timer</th></tr></thead>
+            <tbody id="rtgControlBody"></tbody>
+        </table>
+    </div>
+
+    <div class="cr-section">
+        <h2>QC LIVE ANDONS</h2>
+        <table>
+            <thead><tr><th>QC</th><th>Staff</th><th>Fault Group</th><th>Raised Fault</th><th>Timer</th></tr></thead>
+            <tbody id="qcControlBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- PARETO VIEW OVERLAY -->
+<div id="paretoView" class="overlay">
+    <div class="header-bar">
+        <button class="home-btn" onclick="hideOverlay('paretoView')">🏠 HOME</button>
+        <h1>PARETO ANALYSIS CENTER</h1>
+        <button onclick="downloadLog()" style="background: var(--pareto-color); border: none; padding: 10px 20px; color: white; border-radius: 4px; cursor: pointer; font-weight: bold;">📥 EXCEL LOG</button>
+    </div>
+
+    <div class="pareto-layout">
+        <div class="pareto-sidebar">
+            <button id="sideBtnRTG" class="sidebar-btn active" onclick="setParetoMode('RTG')">RTG ANALYSIS</button>
+            <button id="sideBtnQC" class="sidebar-btn" onclick="setParetoMode('QC')">QC ANALYSIS</button>
+        </div>
+        <div class="pareto-content">
+            <div class="filter-ribbon">
+                <select id="pTimeFilter" onchange="renderPareto()">
+                    <option value="live">Live / Session</option>
+                    <option value="24h">Last 24 Hours</option>
+                </select>
+                <select id="pAssetFilter" onchange="renderPareto()">
+                    <option value="All">All Units</option>
+                </select>
+                <input type="date" id="pDateFilter" onchange="renderPareto()">
             </div>
-            <div class="section-box">
-                <h3>TECH ANDONS</h3>
-                <div class="btn-group" id="techBtns">
-                    </div>
+            <div style="height: 400px; width: 100%;">
+                <canvas id="pChart"></canvas>
             </div>
         </div>
-        <button id="closeAndonBar" class="close-andon-bar" onclick="closeActiveAndon()">CLOSE ANDON</button>
-        <button onclick="closeModal('andonScreen')" style="margin-top:10px;">Exit Screen</button>
     </div>
-</div>
-
-<div id="controlRoom" class="view-page">
-    <h2>Live Control Room Monitoring</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>RTG No</th>
-                <th>Staff ID</th>
-                <th>Andon Type</th>
-                <th>Fault</th>
-                <th>Timer</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody id="controlRoomBody"></tbody>
-    </table>
-</div>
-
-<div id="paretoPage" class="view-page">
-    <h2>Pareto Analysis & History</h2>
-    <div style="background: white; padding: 15px; margin-bottom: 20px; border-radius: 8px;">
-        <label>Filter Date: <input type="date" id="filterDate"></label>
-        <label>RTG: <select id="filterRtg"><option value="All">All</option></select></label>
-        <button onclick="exportToExcel()" style="background: #27ae60; color: white;">Download Excel</button>
-    </div>
-    <div style="max-width: 800px; margin: auto;">
-        <canvas id="paretoChart"></canvas>
-    </div>
-</div>
-
-<div id="qcView" class="view-page">
-    <h2>QC View</h2>
-    <p>QC specific monitoring content goes here...</p>
 </div>
 
 <script>
-    // --- Data Management ---
-    let activeAndons = []; // Current live issues
-    let history = JSON.parse(localStorage.getItem('andonHistory')) || [];
-    let selectedRtg = null;
-    let selectedStaff = null;
+    // --- Data Definitions ---
+    const config = {
+        RTG: {
+            range: [33, 128],
+            prefix: 'RTG',
+            ops: ["NO TT", "NO JOB TO DO", "GANTRY", "WHEELTURN", "ACCIDENT", "CONTAINER ALIGNMENT", "OTHERS"],
+            tech: ["HOIST FAULT", "SPREADER FAULT", "TROLLEY FAULT", "GANTRY FAULT", "CONTROL/POWER", "TRIM/SKEW", "OTHER"]
+        },
+        QC: {
+            range: [8, 36],
+            prefix: 'QC',
+            ops: ["WAITING FOR TT", "WAITING FOR SAFETY CAGE", "WAITING FOR OHF", "ACCIDENT", "CONNECTING WIRE SLING", "JAMMED TWISTLOCK", "WAITING FOR GEAR BOX", "DAMAGED CONTAINER", "LASHING", "UNLASHING"],
+            tech: ["HOIST FAULT", "SPREADER FAULT", "GANTRY FAULT", "CONTROL/POWER", "SKEW/TRIM", "TROLLEY", "SPEED", "OTHER FAULTS"]
+        }
+    };
 
-    // Populate RTG Dropdown (33 to 128)
-    const rtgDropdown = document.getElementById('rtgSelect');
-    const filterRtg = document.getElementById('filterRtg');
-    for(let i=33; i<=128; i++) {
-        let opt = new Option(`RTG ${i}`, i);
-        rtgDropdown.add(opt);
-        filterRtg.add(new Option(`RTG ${i}`, i));
+    let appMode = 'RTG'; // Current mode during login/console
+    let currentAsset = null;
+    let currentStaff = null;
+    let pMode = 'RTG'; // Pareto view mode
+
+    // State Persistence
+    let activeAndons = JSON.parse(localStorage.getItem('port_active')) || [];
+    let logs = JSON.parse(localStorage.getItem('port_logs')) || [];
+
+    // --- Initialization ---
+    window.onload = () => {
+        updateControlRoomTables();
+        setInterval(updateTimers, 1000);
+    };
+
+    function showOverlay(id) { 
+        document.getElementById(id).style.display = 'block'; 
+        if(id === 'controlRoom') updateControlRoomTables();
+        if(id === 'paretoView') { setParetoMode('RTG'); }
     }
+    function hideOverlay(id) { document.getElementById(id).style.display = 'none'; }
 
-    const opsList = ["NO TT", "NO JOB TO DO", "GANTRY", "WHEELTURN", "ACCIDENT", "CONTAINER ALIGNMENT", "OTHERS"];
-    const techList = ["HOIST FAULT", "SPREADER FAULT", "TROLLEY FAULT", "GANTRY FAULT", "CONTROL/POWER", "TRIM/SKEW", "OTHER"];
+    // --- Login Logic ---
+    function openLogin(mode) {
+        appMode = mode;
+        const title = document.getElementById('loginTitle');
+        const subtitle = document.getElementById('loginSubtitle');
+        const select = document.getElementById('assetSelect');
+        const btn = document.getElementById('loginActionBtn');
 
-    // Initialize Buttons
-    function initAndonBtns() {
-        const createBtns = (list, containerId, type) => {
-            const container = document.getElementById(containerId);
-            container.innerHTML = '';
-            list.forEach(item => {
-                let btn = document.createElement('button');
-                btn.className = 'andon-btn';
-                btn.innerText = item;
-                btn.onclick = () => raiseAndon(item, type);
-                container.appendChild(btn);
-            });
-        };
-        createBtns(opsList, 'opsBtns', 'OPS');
-        createBtns(techList, 'techBtns', 'TECH');
-    }
-
-    // --- Core Logic ---
-    function openRTGSelection() { document.getElementById('rtgModal').style.display = 'block'; }
-    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-    function enterAndonScreen() {
-        selectedStaff = document.getElementById('staffId').value;
-        selectedRtg = rtgDropdown.value;
-        if(!selectedStaff) return alert("Enter Staff ID");
+        title.innerText = `${mode} OPERATOR LOGIN`;
+        subtitle.innerText = `${mode} ACCESS PANEL`;
+        btn.style.backgroundColor = mode === 'RTG' ? 'var(--rtg-color)' : 'var(--qc-color)';
         
-        document.getElementById('currentRtgTitle').innerText = `RTG: ${selectedRtg} | Staff: ${selectedStaff}`;
-        closeModal('rtgModal');
-        document.getElementById('andonScreen').style.display = 'block';
-        initAndonBtns();
-        checkActiveStatus();
+        select.innerHTML = '';
+        const [start, end] = config[mode].range;
+        for(let i = start; i <= end; i++) {
+            const val = i < 10 ? `0${i}` : i;
+            const text = `${config[mode].prefix} ${val}`;
+            select.add(new Option(text, text));
+        }
+
+        showOverlay('loginOverlay');
     }
 
-    function raiseAndon(fault, type) {
-        if(activeAndons.find(a => a.rtg === selectedRtg)) return alert("An Andon is already active for this RTG!");
-        
-        const newAndon = {
-            rtg: selectedRtg,
-            staff: selectedStaff,
-            type: type,
+    function enterConsole() {
+        currentStaff = document.getElementById('staffId').value;
+        currentAsset = document.getElementById('assetSelect').value;
+        if(!currentStaff) return alert("Please enter Staff ID");
+
+        document.getElementById('consoleTitle').innerText = `${currentAsset} | Staff: ${currentStaff}`;
+        initAndonGrids();
+        hideOverlay('loginOverlay');
+        showOverlay('andonConsole');
+        refreshConsoleUI();
+    }
+
+    function exitConsole() {
+        currentAsset = null;
+        currentStaff = null;
+        hideOverlay('andonConsole');
+    }
+
+    // --- Andon Console Logic ---
+    function initAndonGrids() {
+        const opsGrid = document.getElementById('opsGrid');
+        const techGrid = document.getElementById('techGrid');
+        opsGrid.innerHTML = '';
+        techGrid.innerHTML = '';
+
+        const data = config[appMode];
+        data.ops.forEach(fault => createBtn(fault, 'OPS', opsGrid));
+        data.tech.forEach(fault => createBtn(fault, 'TECH', techGrid));
+    }
+
+    function createBtn(fault, group, container) {
+        const b = document.createElement('button');
+        b.className = 'andon-btn';
+        b.innerText = fault;
+        b.onclick = () => raiseAndon(fault, group);
+        container.appendChild(b);
+    }
+
+    function raiseAndon(fault, group) {
+        if(activeAndons.some(a => a.asset === currentAsset)) return;
+
+        const entry = {
+            id: Date.now(),
+            mode: appMode,
+            asset: currentAsset,
+            staff: currentStaff,
+            group: group,
             fault: fault,
-            startTime: new Date().getTime(),
-            displayTime: new Date().toLocaleString()
+            start: new Date().getTime()
         };
-        activeAndons.push(newAndon);
-        checkActiveStatus();
-        updateControlRoom();
+
+        activeAndons.push(entry);
+        saveState();
+        refreshConsoleUI();
     }
 
-    function checkActiveStatus() {
-        const active = activeAndons.find(a => a.rtg === selectedRtg);
-        const bar = document.getElementById('closeAndonBar');
+    function refreshConsoleUI() {
+        const active = activeAndons.find(a => a.asset === currentAsset);
+        const closeBtn = document.getElementById('closeAndonBtn');
+        
+        document.querySelectorAll('.andon-btn').forEach(b => b.classList.remove('active'));
+
         if(active) {
-            bar.classList.add('can-close');
-            // Highlight the button that was clicked (simplified for demo)
+            document.querySelectorAll('.andon-btn').forEach(b => {
+                if(b.innerText === active.fault) b.classList.add('active');
+            });
+            closeBtn.classList.add('blinking');
         } else {
-            bar.classList.remove('can-close');
+            closeBtn.classList.remove('blinking');
         }
     }
 
-    function closeActiveAndon() {
-        const index = activeAndons.findIndex(a => a.rtg === selectedRtg);
-        if(index === -1) return;
+    function triggerCloseAndon() {
+        const idx = activeAndons.findIndex(a => a.asset === currentAsset);
+        if(idx === -1) return;
 
-        const closed = activeAndons.splice(index, 1)[0];
-        closed.endTime = new Date().getTime();
-        closed.endDisplay = new Date().toLocaleString();
-        
-        history.push(closed);
-        localStorage.setItem('andonHistory', JSON.stringify(history));
-        
-        checkActiveStatus();
-        updateControlRoom();
-        updatePareto();
+        const closed = activeAndons.splice(idx, 1)[0];
+        const end = new Date().getTime();
+
+        logs.push({
+            ...closed,
+            end: end,
+            duration: Math.floor((end - closed.start) / 1000)
+        });
+
+        saveState();
+        refreshConsoleUI();
     }
 
-    function showPage(pageId) {
-        document.querySelectorAll('.view-page').forEach(p => p.classList.remove('active-view'));
-        document.getElementById(pageId).classList.add('active-view');
-        if(pageId === 'controlRoom') updateControlRoom();
-        if(pageId === 'paretoPage') updatePareto();
+    function saveState() {
+        localStorage.setItem('port_active', JSON.stringify(activeAndons));
+        localStorage.setItem('port_logs', JSON.stringify(logs));
     }
 
-    // --- Views ---
-    function updateControlRoom() {
-        const tbody = document.getElementById('controlRoomBody');
-        tbody.innerHTML = '';
+    // --- Control Room Logic ---
+    function updateControlRoomTables() {
+        const rtgBody = document.getElementById('rtgControlBody');
+        const qcBody = document.getElementById('qcControlBody');
+        rtgBody.innerHTML = '';
+        qcBody.innerHTML = '';
+
         activeAndons.forEach(a => {
-            const row = tbody.insertRow();
-            row.innerHTML = `
-                <td>${a.rtg}</td>
+            const row = `<tr>
+                <td>${a.asset}</td>
                 <td>${a.staff}</td>
-                <td>${a.type}</td>
-                <td><span class="blink-red">${a.fault}</span></td>
-                <td id="timer-${a.rtg}">0s</td>
-                <td>ACTIVE</td>
-            `;
+                <td>${a.group}</td>
+                <td class="blink-text">${a.fault}</td>
+                <td id="timer-${a.id}">--</td>
+            </tr>`;
+            if(a.mode === 'RTG') rtgBody.innerHTML += row;
+            else qcBody.innerHTML += row;
         });
     }
 
-    // Live Timer Update
-    setInterval(() => {
+    function updateTimers() {
         activeAndons.forEach(a => {
-            const el = document.getElementById(`timer-${a.rtg}`);
+            const el = document.getElementById(`timer-${a.id}`);
             if(el) {
-                const diff = Math.floor((new Date().getTime() - a.startTime) / 1000);
-                el.innerText = `${diff}s`;
+                const diff = Math.floor((new Date().getTime() - a.start) / 1000);
+                const m = Math.floor(diff / 60);
+                const s = diff % 60;
+                el.innerText = `${m}m ${s}s`;
             }
         });
-    }, 1000);
+    }
 
-    // --- Analytics & Export ---
+    // --- Pareto Logic ---
     let myChart;
-    function updatePareto() {
-        const counts = {};
-        history.forEach(h => counts[h.fault] = (counts[h.fault] || 0) + 1);
+    function setParetoMode(mode) {
+        pMode = mode;
+        document.getElementById('sideBtnRTG').classList.toggle('active', mode === 'RTG');
+        document.getElementById('sideBtnQC').classList.toggle('active', mode === 'QC');
         
+        // Update asset dropdown
+        const filter = document.getElementById('pAssetFilter');
+        filter.innerHTML = '<option value="All">All Units</option>';
+        const [start, end] = config[mode].range;
+        for(let i=start; i<=end; i++) {
+            const val = i < 10 ? `0${i}` : i;
+            const text = `${config[mode].prefix} ${val}`;
+            filter.add(new Option(text, text));
+        }
+        renderPareto();
+    }
+
+    function renderPareto() {
+        const timeFilter = document.getElementById('pTimeFilter').value;
+        const assetFilter = document.getElementById('pAssetFilter').value;
+        const dateFilter = document.getElementById('pDateFilter').value;
+
+        const now = new Date().getTime();
+        const hrs24 = 24 * 60 * 60 * 1000;
+
+        let filtered = logs.filter(l => l.mode === pMode);
+
+        if(timeFilter === '24h') {
+            filtered = filtered.filter(l => (now - l.start) <= hrs24);
+        } else if (timeFilter === 'live') {
+            // "Live" shows last 4 hours or session data
+            filtered = filtered.filter(l => (now - l.start) <= (4 * 60 * 60 * 1000));
+        }
+
+        if(assetFilter !== 'All') {
+            filtered = filtered.filter(l => l.asset === assetFilter);
+        }
+
+        if(dateFilter) {
+            filtered = filtered.filter(l => new Date(l.start).toISOString().split('T')[0] === dateFilter);
+        }
+
+        const counts = {};
+        filtered.forEach(f => counts[f.fault] = (counts[f.fault] || 0) + 1);
+
         const labels = Object.keys(counts).sort((a,b) => counts[b] - counts[a]);
         const data = labels.map(l => counts[l]);
 
         if(myChart) myChart.destroy();
-        const ctx = document.getElementById('paretoChart').getContext('2d');
+        const ctx = document.getElementById('pChart').getContext('2d');
         myChart = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: labels,
-                datasets: [{ label: 'Fault Frequency', data: data, backgroundColor: '#3498db' }]
+                datasets: [{
+                    label: `Frequency of ${pMode} Faults`,
+                    data: data,
+                    backgroundColor: pMode === 'RTG' ? '#3b82f6' : '#8b5cf6'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { 
+                    y: { beginAtZero: true, grid: { color: '#334155' }, ticks: { color: 'white' } },
+                    x: { ticks: { color: 'white' } }
+                },
+                plugins: { legend: { labels: { color: 'white' } } }
             }
         });
     }
 
-    function exportToExcel() {
-        const data = history.map(h => ({
-            "RTG NO": h.rtg,
-            "STAFF ID": h.staff,
-            "ANDON RAISED": h.fault,
-            "START TIME": h.displayTime,
-            "CLOSED TIME": h.endDisplay
+    function downloadLog() {
+        if(logs.length === 0) return alert("No history available to download.");
+        const exportData = logs.map(l => ({
+            "CATEGORY": l.mode,
+            "ASSET NO": l.asset,
+            "STAFF ID": l.staff,
+            "FAULT GROUP": l.group,
+            "FAULT DESCRIPTION": l.fault,
+            "RAISED TIME": new Date(l.start).toLocaleString(),
+            "CLOSED TIME": new Date(l.end).toLocaleString(),
+            "DURATION (SEC)": l.duration
         }));
-        const worksheet = XLSX.utils.json_to_sheet(data);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Andon Log");
-        XLSX.writeFile(workbook, "RTG_Andon_History.xlsx");
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Andon Log");
+        XLSX.writeFile(wb, "Port_Andon_Report.xlsx");
     }
-
 </script>
-
 </body>
 </html>
