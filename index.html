@@ -518,7 +518,6 @@
         if(timeFilter === '24h') {
             filtered = filtered.filter(l => (now - l.start) <= hrs24);
         } else if (timeFilter === 'live') {
-            // "Live" shows last 4 hours or session data
             filtered = filtered.filter(l => (now - l.start) <= (4 * 60 * 60 * 1000));
         }
 
